@@ -14,6 +14,9 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 
 const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];
 
+/** Skill names must be lowercase a-z, 0-9, and hyphens per the Agent Skills spec. */
+const VALID_SKILL_NAME_RE = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/;
+
 type IgnoreMatcher = ReturnType<typeof ignore>;
 
 function toPosixPath(p: string): string {
@@ -239,6 +242,14 @@ function loadSkillsFromDirInternal(
 			}
 
 			if (!isFile || !includeRootFiles || !entry.name.endsWith(".md")) {
+				continue;
+			}
+
+			// Skip root .md files whose filename stem is not a valid skill name.
+			// Skill names must be lowercase a-z, 0-9, hyphens per spec, so this
+			// naturally excludes convention files like AGENTS.md, README.md, etc.
+			const stem = entry.name.slice(0, -3);
+			if (!VALID_SKILL_NAME_RE.test(stem)) {
 				continue;
 			}
 

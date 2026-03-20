@@ -127,6 +127,9 @@ const FILE_PATTERNS: Record<ResourceType, RegExp> = {
 
 const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];
 
+/** Skill names must be lowercase a-z, 0-9, and hyphens per the Agent Skills spec. */
+const VALID_SKILL_NAME_RE = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/;
+
 type IgnoreMatcher = ReturnType<typeof ignore>;
 
 function toPosixPath(p: string): string {
@@ -288,7 +291,10 @@ function collectSkillEntries(
 			if (isDir) {
 				entries.push(...collectSkillEntries(fullPath, false, ig, root));
 			} else if (isFile) {
-				const isRootMd = includeRootFiles && entry.name.endsWith(".md");
+				// For root .md files, skip those whose filename stem is not a valid
+				// skill name (uppercase convention files like AGENTS.md, README.md, etc.)
+				const isRootMd =
+					includeRootFiles && entry.name.endsWith(".md") && VALID_SKILL_NAME_RE.test(entry.name.slice(0, -3));
 				const isSkillMd = !includeRootFiles && entry.name === "SKILL.md";
 				if (isRootMd || isSkillMd) {
 					entries.push(fullPath);

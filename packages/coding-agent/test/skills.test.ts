@@ -200,6 +200,24 @@ describe("skills", () => {
 			expect(skills).toHaveLength(1);
 			expect(skills[0].disableModelInvocation).toBe(false);
 		});
+
+		it("should skip root .md files whose stem is not a valid skill name", () => {
+			const { skills, diagnostics } = loadSkillsFromDir({
+				dir: join(fixturesDir, "non-skill-root-files"),
+				source: "test",
+			});
+
+			const skillNames = skills.map((s) => s.name);
+			// SKILL.md in subdirectory loads normally
+			expect(skillNames).toContain("real-skill");
+			// Root .md with a valid lowercase stem loads as a skill
+			expect(skillNames).toContain("helper-notes");
+			// Uppercase filenames (AGENTS.md, README.md) are never collected,
+			// regardless of whether they contain frontmatter
+			expect(skills).toHaveLength(2);
+			expect(diagnostics.some((d) => d.path?.endsWith("AGENTS.md"))).toBe(false);
+			expect(diagnostics.some((d) => d.path?.endsWith("README.md"))).toBe(false);
+		});
 	});
 
 	describe("formatSkillsForPrompt", () => {
